@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +23,7 @@ type Issue struct {
 	Number    int        `json:"number"`
 	Title     string     `json:"title"`
 	Body      string     `json:"body"`
+	CreatedAt string     `json:"createdAt"`
 	Labels    []Label    `json:"labels"`
 	Comments  []Comment  `json:"comments"`
 	Milestone *Milestone `json:"milestone"`
@@ -79,6 +81,17 @@ func main() {
 		log.Fatalf("Error unmarshaling JSON data: %v", err)
 	}
 	log.Printf("Successfully parsed %d issues from the file.\n", len(sourceIssues))
+
+	// Sort issues by creation date, from oldest to newest
+	log.Println("Sorting issues by creation date, from oldest to newest")
+	sort.Slice(sourceIssues, func(i, j int) bool {
+		timeI, errI := time.Parse(time.RFC3339, sourceIssues[i].CreatedAt)
+		timeJ, errJ := time.Parse(time.RFC3339, sourceIssues[j].CreatedAt)
+		if errI != nil || errJ != nil {
+			return false
+		}
+		return timeI.Before(timeJ)
+	})
 
 	log.Println("Phase 1: Collecting unique labels and milestones")
 	labels, milestones := findLablesAndMilestones(sourceIssues)
